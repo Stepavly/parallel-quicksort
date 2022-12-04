@@ -22,23 +22,15 @@ std::ostream &operator<<(std::ostream &out, const std::vector<T> &data) {
 
 static std::mt19937 rnd(0);
 
-std::string smallStringGenerator() {
-  std::string s(rnd() % 20, 'a');
-  for (size_t i = 0; i < s.size(); i++) {
-    s[i] = char(rnd() % 256);
-  }
-  return s;
-}
-
-std::vector<std::string> bigIntTestGenerator() {
-  std::vector<std::string> data(1'000'000);
+std::vector<int> bigIntTestGenerator() {
+  std::vector<int> data(100'000'000);
   for (auto &i: data) {
-    i = smallStringGenerator();
+    i = rnd();
   }
   return data;
 }
 
-static int ITERATIONS = 1;
+static int ITERATIONS = 5;
 
 std::vector<long> benchmark() {
   std::vector<long> iterationTimes(ITERATIONS);
@@ -58,22 +50,16 @@ std::vector<long> benchmark() {
 std::vector<long> benchmark_par() {
   std::vector<long> iterationTimes(ITERATIONS);
 
-//#pragma omp parallel num_threads(5) shared(iterationTimes, rnd)
-  {
-//#pragma omp master
-    {
-      for (int iter = 0; iter < ITERATIONS; iter++) {
-        auto testData = bigIntTestGenerator();
-        std::cout << "Test generated" << std::endl;
-        double begin = omp_get_wtime();
+  for (int iter = 0; iter < ITERATIONS; iter++) {
+    auto testData = bigIntTestGenerator();
+    std::cout << "Test generated" << std::endl;
+    double begin = omp_get_wtime();
 
-        quick_sort_par(testData);
+    quick_sort_par(testData);
 
-        double end = omp_get_wtime();
-        iterationTimes[iter] = (long) ((end - begin) * 1000);
-        std::cout << "Iteration " << (iter + 1) << " took " << iterationTimes[iter] << " ms" << std::endl;
-      }
-    }
+    double end = omp_get_wtime();
+    iterationTimes[iter] = (long) ((end - begin) * 1000);
+    std::cout << "Iteration " << (iter + 1) << " took " << iterationTimes[iter] << " ms" << std::endl;
   }
   std::sort(iterationTimes.begin(), iterationTimes.end());
   return iterationTimes;
@@ -91,8 +77,7 @@ void prettifyStatistics(std::vector<long> statistics) {
 }
 
 int main() {
-//  omp_set_dynamic(0);
-//  omp_set_num_threads(4);
+  omp_set_dynamic(0);
 
   std::cout << "Parallel algo" << std::endl;
   prettifyStatistics(benchmark_par());
